@@ -32,6 +32,7 @@ flowchart LR
         H[Databricks Workflows] --> C
         H --> D
         H --> F
+H --> G
     end
 
     subgraph Visualization
