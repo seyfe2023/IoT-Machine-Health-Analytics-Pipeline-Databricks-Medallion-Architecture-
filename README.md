@@ -1,264 +1,209 @@
-{
- "cells": [
-  {
-   "cell_type": "markdown",
-   "metadata": {
-    "application/vnd.databricks.v1+cell": {
-     "cellMetadata": {},
-     "inputWidgets": {},
-     "nuid": "898c454b-a694-448f-9e7a-54c81aff7c8c",
-     "showTitle": false,
-     "tableResultSettingsMap": {},
-     "title": ""
-    }
-   },
-   "source": [
-    "# Machine Health Monitoring Pipeline (Databricks | Medallion Architecture)\n",
-    "\n",
-    "This project demonstrates an end-to-end data engineering pipeline for IoT machine health monitoring using Databricks and a Medallion Architecture (Bronze, Silver, Gold).\n",
-    "\n",
-    "The pipeline ingests messy sensor data, performs cleaning and validation, detects anomalies using time-series logic, and produces analytics-ready datasets with a dashboard for monitoring.\n",
-    "\n",
-    "---\n",
-    "\n",
-    "## Architecture Diagram\n",
-    "\n",
-    "```mermaid\n",
-    "flowchart LR\n",
-    "    subgraph Source\n",
-    "        A[Messy IoT JSON Data] --> B[Databricks Volume]\n",
-    "    end\n",
-    "\n",
-    "    subgraph Bronze\n",
-    "        B --> C[Bronze Table<br/>Raw Data]\n",
-    "    end\n",
-    "\n",
-    "    subgraph Silver\n",
-    "        C --> D[Cleaned Data]\n",
-    "        D --> E[Data Quality Checks]\n",
-    "    end\n",
-    "\n",
-    "    subgraph Gold\n",
-    "        E --> F[Anomaly Detection]\n",
-    "        E --> G[Machine Metrics]\n",
-    "    end\n",
-    "\n",
-    "    subgraph Orchestration\n",
-    "        H[Databricks Workflows] --> C\n",
-    "        H --> D\n",
-    "        H --> F\n",
-    "    end\n",
-    "\n",
-    "    subgraph Visualization\n",
-    "        F --> I[Dashboard]\n",
-    "        G --> I\n",
-    "    end"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {
-    "application/vnd.databricks.v1+cell": {
-     "cellMetadata": {},
-     "inputWidgets": {},
-     "nuid": "e8ab9b5a-6c20-4844-94c8-2175d9bf76b5",
-     "showTitle": false,
-     "tableResultSettingsMap": {},
-     "title": ""
-    }
-   },
-   "source": [
-    "## Project Screenshots\n",
-    "\n",
-    "### Dashboard\n",
-    "![Dashboard](images/Databricks_Dashboards.png)\n",
-    "\n",
-    "### Task Graph\n",
-    "![Task Graph](images/Databricks_Task_Graph.png)\n",
-    "\n",
-    "### Lineage Graph\n",
-    "![Lineage Graph](images/Databricks_Lineage_Graph.png)\n",
-    "\n",
-    "### Workflows\n",
-    "![Workflows](images/Databricks_Workflows.png)\n",
-    "\n",
-    "---\n",
-    "\n",
-    "## Tech Stack\n",
-    "\n",
-    "- Databricks (Delta Lake, Workflows, Dashboard)\n",
-    "- PySpark\n",
-    "- SQL\n",
-    "- Delta Tables\n",
-    "- Unity Catalog (Volumes)\n",
-    "\n",
-    "---\n",
-    "\n",
-    "## Features\n",
-    "\n",
-    "- End-to-end Medallion Architecture (Bronze → Silver → Gold)\n",
-    "- Ingestion of messy IoT JSON data\n",
-    "- Data cleaning and transformation using PySpark\n",
-    "- Data quality checks (nulls, ranges, duplicates)\n",
-    "- Time-series anomaly detection using window functions\n",
-    "- Aggregated machine performance metrics\n",
-    "- Workflow orchestration using Databricks Workflows\n",
-    "- Interactive dashboard for monitoring anomalies\n",
-    "\n",
-    "---\n",
-    "\n",
-    "## Project Structure\n",
-    "\n",
-    "---\n",
-    "\n",
-    "```\n",
-    "machine-health-monitoring-databricks/\n",
-    "├── notebooks/\n",
-    "│   ├── 01_bronze_ingestion\n",
-    "│   ├── 02_silver_cleaning\n",
-    "│   ├── 03_gold_analytics\n",
-    "│   └── 04_dashboard\n",
-    "├── data/\n",
-    "│   └── sample_iot_data.json\n",
-    "├── images/\n",
-    "│   └── *.png\n",
-    "└── README.md\n",
-    "```\n",
-    "\n",
-    "---\n",
-    "\n",
-    "\n",
-    "## How the Pipeline Works\n",
-    "\n",
-    "### 1. Data Ingestion (Bronze)\n",
-    "\n",
-    "- Raw IoT sensor data is stored in a Databricks Volume\n",
-    "- Data is ingested without transformation\n",
-    "- Schema is flexible to preserve raw inconsistencies\n",
-    "\n",
-    "---\n",
-    "\n",
-    "### 2. Data Cleaning (Silver)\n",
-    "\n",
-    "- Remove inconsistent formats \n",
-    "- Cast columns to correct types\n",
-    "- Handle missing values\n",
-    "- Remove outliers\n",
-    "- Deduplicate records\n",
-    "\n",
-    "---\n",
-    "\n",
-    "### 3. Data Quality Checks\n",
-    "\n",
-    "- Null value validation\n",
-    "- Range checks (temperature, vibration)\n",
-    "- Duplicate detection\n",
-    "- Optional pipeline failure on bad data\n",
-    "\n",
-    "---\n",
-    "\n",
-    "### 4. Analytics Layer (Gold)\n",
-    "\n",
-    "#### Anomaly Detection\n",
-    "\n",
-    "- Rolling average using window functions\n",
-    "\n",
-    "- Detect:\n",
-    "  - HIGH_TEMP → temperature ≥ threshold\n",
-    "  - SPIKE → deviation from rolling average\n",
-    "\n",
-    "#### Machine Metrics\n",
-    "\n",
-    "- Average temperature\n",
-    "- Maximum temperature\n",
-    "\n",
-    "---\n",
-    "\n",
-    "### 5. Orchestration\n",
-    "\n",
-    "- Implemented using Databricks Workflows\n",
-    "\n",
-    "- Task dependencies:\n",
-    "  - Bronze → Silver → Gold\n",
-    "\n",
-    "- Scheduled execution\n",
-    "\n",
-    "---\n",
-    "\n",
-    "### 6. Dashboard\n",
-    "\n",
-    "- Visualizes:\n",
-    "  - Anomalies over time\n",
-    "  - Machine performance\n",
-    "\n",
-    "---\n",
-    "\n",
-    "## Example Outputs\n",
-    "\n",
-    "### Anomalies Table\n",
-    "\n",
-    "| machine_id | timestamp           | temperature | anomaly_type |\n",
-    "|------------|--------------------|-------------|--------------|\n",
-    "| M1         | 2026-03-29 01:11   | 120         | HIGH_TEMP    |\n",
-    "\n",
-    "---\n",
-    "\n",
-    "### Machine Metrics\n",
-    "\n",
-    "| machine_id | avg_temp | max_temp | avg_vibration |\n",
-    "|------------|----------|----------|---------------|\n",
-    "| M1         | 78.5     | 120      | 0.65          |\n",
-    "\n",
-    "---\n",
-    "\n",
-    "## Insights\n",
-    "\n",
-    "- Certain machines show recurring high-temperature anomalies, indicating potential overheating issues\n",
-    "- Sudden temperature spikes suggest unstable machine behavior\n",
-    "- Machines with higher vibration tend to produce more anomalies\n",
-    "- Anomalies often occur in bursts rather than uniformly over time\n",
-    "\n",
-    "---\n",
-    "\n",
-    "## Key Learnings\n",
-    "\n",
-    "- Designing Medallion Architecture pipelines\n",
-    "- Handling messy real-world data\n",
-    "- Implementing data quality checks\n",
-    "- Using window functions for time-series analytics\n",
-    "- Building production-style pipelines in Databricks\n",
-    "- Orchestrating workflows with dependencies\n",
-    "\n",
-    "---\n",
-    "\n",
-    "## Author\n",
-    "\n",
-    "Seyfemichael Araya  \n",
-    "Berlin, Germany  \n",
-    "LinkedIn: https://www.linkedin.com/in/seyfemichael-araya-a82290288/\n"
-   ]
-  }
- ],
- "metadata": {
-  "application/vnd.databricks.v1+notebook": {
-   "computePreferences": null,
-   "dashboards": [],
-   "environmentMetadata": {
-    "base_environment": "",
-    "environment_version": "5"
-   },
-   "inputWidgetPreferences": null,
-   "language": "python",
-   "notebookMetadata": {
-    "pythonIndentUnit": 4
-   },
-   "notebookName": "00_README",
-   "widgets": {}
-  },
-  "language_info": {
-   "name": "python"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 0
-}
+# Machine Health Monitoring Pipeline (Databricks | Medallion Architecture)
+
+This project demonstrates an end-to-end data engineering pipeline for IoT machine health monitoring using Databricks and a Medallion Architecture (Bronze, Silver, Gold).
+
+The pipeline ingests messy sensor data, performs cleaning and validation, detects anomalies using time-series logic, and produces analytics-ready datasets with a dashboard for monitoring.
+
+---
+
+## Architecture Diagram
+
+```mermaid
+flowchart LR
+    subgraph Source
+        A[Messy IoT JSON Data] --> B[Databricks Volume]
+    end
+
+    subgraph Bronze
+        B --> C[Bronze Table<br/>Raw Data]
+    end
+
+    subgraph Silver
+        C --> D[Cleaned Data]
+        D --> E[Data Quality Checks]
+    end
+
+    subgraph Gold
+        E --> F[Anomaly Detection]
+        E --> G[Machine Metrics]
+    end
+
+    subgraph Orchestration
+        H[Databricks Workflows] --> C
+        H --> D
+        H --> F
+    end
+
+    subgraph Visualization
+        F --> I[Dashboard]
+        G --> I
+    end
+```
+## Project Screenshots
+
+### Dashboard
+![Dashboard](images/Databricks_Dashboards.png)
+
+### Task Graph
+![Task Graph](images/Databricks_Task_Graph.png)
+
+### Lineage Graph
+![Lineage Graph](images/Databricks_Lineage_Graph.png)
+
+### Workflows
+![Workflows](images/Databricks_Workflows.png)
+
+---
+
+## Tech Stack
+
+- Databricks (Delta Lake, Workflows, Dashboard)
+- PySpark
+- SQL
+- Delta Tables
+- Unity Catalog (Volumes)
+
+---
+
+## Features
+
+- End-to-end Medallion Architecture (Bronze → Silver → Gold)
+- Ingestion of messy IoT JSON data
+- Data cleaning and transformation using PySpark
+- Data quality checks (nulls, ranges, duplicates)
+- Time-series anomaly detection using window functions
+- Aggregated machine performance metrics
+- Workflow orchestration using Databricks Workflows
+- Interactive dashboard for monitoring anomalies
+
+---
+
+## Project Structure
+
+---
+
+```
+machine-health-monitoring-databricks/
+├── notebooks/
+│   ├── 01_bronze_ingestion
+│   ├── 02_silver_cleaning
+│   ├── 03_gold_analytics
+│   └── 04_dashboard
+├── data/
+│   └── sample_iot_data.json
+├── images/
+│   └── *.png
+└── README.md
+```
+
+---
+
+
+## How the Pipeline Works
+
+### 1. Data Ingestion (Bronze)
+
+- Raw IoT sensor data is stored in a Databricks Volume
+- Data is ingested without transformation
+- Schema is flexible to preserve raw inconsistencies
+
+---
+
+### 2. Data Cleaning (Silver)
+
+- Remove inconsistent formats 
+- Cast columns to correct types
+- Handle missing values
+- Remove outliers
+- Deduplicate records
+
+---
+
+### 3. Data Quality Checks
+
+- Null value validation
+- Range checks (temperature, vibration)
+- Duplicate detection
+- Optional pipeline failure on bad data
+
+---
+
+### 4. Analytics Layer (Gold)
+
+#### Anomaly Detection
+
+- Rolling average using window functions
+
+- Detect:
+  - HIGH_TEMP → temperature ≥ threshold
+  - SPIKE → deviation from rolling average
+
+#### Machine Metrics
+
+- Average temperature
+- Maximum temperature
+
+---
+
+### 5. Orchestration
+
+- Implemented using Databricks Workflows
+
+- Task dependencies:
+  - Bronze → Silver → Gold
+
+- Scheduled execution
+
+---
+
+### 6. Dashboard
+
+- Visualizes:
+  - Anomalies over time
+  - Machine performance
+
+---
+
+## Example Outputs
+
+### Anomalies Table
+
+| machine_id | timestamp           | temperature | anomaly_type |
+|------------|--------------------|-------------|--------------|
+| M1         | 2026-03-29 01:11   | 120         | HIGH_TEMP    |
+
+---
+
+### Machine Metrics
+
+| machine_id | avg_temp | max_temp | avg_vibration |
+|------------|----------|----------|---------------|
+| M1         | 78.5     | 120      | 0.65          |
+
+---
+
+## Insights
+
+- Certain machines show recurring high-temperature anomalies, indicating potential overheating issues
+- Sudden temperature spikes suggest unstable machine behavior
+- Machines with higher vibration tend to produce more anomalies
+- Anomalies often occur in bursts rather than uniformly over time
+
+---
+
+## Key Learnings
+
+- Designing Medallion Architecture pipelines
+- Handling messy real-world data
+- Implementing data quality checks
+- Using window functions for time-series analytics
+- Building production-style pipelines in Databricks
+- Orchestrating workflows with dependencies
+
+---
+
+## Author
+
+Seyfemichael Araya  
+Berlin, Germany  
+LinkedIn: https://www.linkedin.com/in/seyfemichael-araya-a82290288/
