@@ -39,6 +39,12 @@ H --> G
         F --> I[Dashboard]
         G --> I
     end
+    style Source fill:#e8f4f8,stroke:#333,stroke-width:2px,color:#333
+    style Bronze fill:#e8f4f8,stroke:#333,stroke-width:2px,color:#333
+    style Silver fill:#e8f4f8,stroke:#333,stroke-width:2px,color:#333
+    style Gold fill:#e8f4f8,stroke:#333,stroke-width:2px,color:#333
+    style Orchestration fill:#e8f4f8,stroke:#333,stroke-width:2px,color:#333
+    style Visualization fill:#e8f4f8,stroke:#333,stroke-width:2px,color:#333
 ```
 ## Project Screenshots
 
